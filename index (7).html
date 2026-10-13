@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab Talentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --paper: #F6F7FA; --surface: #FFFFFF; --ink: #1E2433; --muted: #5C6478; --line: #DDE1EA;
+    --danger: #B42318; --warn: #A15C00; --warn-soft: #FFF3DC;
+    --accent: #4B4FC9; --accent-soft: #ECEDFB;
+    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --body: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  body[data-group="dreamers"] { --accent: #4B4FC9; --accent-soft: #ECEDFB; }
+  body[data-group="builders"] { --accent: #0F7A6C; --accent-soft: #E1F2EF; }
+  body[data-group="creators"] { --accent: #B85F06; --accent-soft: #FBEEDD; }
+  body.neutral { --accent: #1E2433; --accent-soft: #EEF0F4; }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--paper); color: var(--ink); font: 16px/1.5 var(--body); -webkit-font-smoothing: antialiased; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+  h2.page-title { font: 800 1.8rem/1.1 var(--display); margin: 0; letter-spacing: -.015em; text-transform: none; }
+  h3 { font: 600 1.15rem/1.2 var(--display); margin: 0 0 .75rem; }
+
+  .btn { border: 1px solid var(--line); background: var(--surface); padding: .55rem 1rem; border-radius: 10px; font-weight: 600; }
+  .btn:hover { border-color: var(--muted); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.08); border-color: var(--accent); }
+  .btn-primary:disabled { opacity: .45; cursor: default; filter: none; }
+  .btn-ghost { border-color: transparent; background: transparent; color: var(--muted); }
+  .btn-danger { color: var(--danger); }
+  .btn-sm { padding: .35rem .7rem; font-size: .88rem; }
+  input[type=text], input[type=email], input[type=password], input[type=date], input[type=number], select, textarea {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: .55rem .75rem; width: 100%;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  .field { display: block; margin-bottom: 1rem; }
+  .field > span { display: block; font-size: .9rem; font-weight: 600; margin-bottom: .3rem; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+  .error { color: var(--danger); font-size: .92rem; min-height: 1.4em; }
+  .empty { padding: 2rem 1rem; color: var(--muted); text-align: center; }
+  .muted { color: var(--muted); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+
+  /* Login */
+  #login, #noAccess { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }
+  .login-card { width: 100%; max-width: 380px; }
+  .login-card h1 { font: 800 2.6rem/1 var(--display); margin: 0 0 .4rem; letter-spacing: -.02em; }
+  .login-card p { color: var(--muted); margin: 0 0 1.75rem; }
+  .login-card .btn-primary { width: 100%; padding: .75rem; background: #4B4FC9; border-color: #4B4FC9; }
+  .login-lang { margin-top: 1.5rem; }
+
+  /* Shell */
+  header.top { background: var(--surface); border-bottom: 1px solid var(--line); }
+  .top-inner { max-width: 1160px; margin: 0 auto; padding: .75rem 1.25rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .brand { font: 800 1.35rem/1 var(--display); letter-spacing: -.01em; margin-right: auto; }
+  nav.pages { display: flex; gap: .25rem; background: var(--paper); padding: .25rem; border-radius: 12px; flex-wrap: wrap; }
+  nav.pages button { border: 0; background: transparent; padding: .45rem .85rem; border-radius: 9px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  nav.pages button[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(30,36,51,.12); }
+  .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .lang button { border: 0; background: var(--surface); padding: .35rem .6rem; font-weight: 600; font-size: .85rem; color: var(--muted); }
+  .lang button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  main { max-width: 1160px; margin: 0 auto; padding: 1.5rem 1.25rem 7rem; }
+  .page-head { display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .page-head .grow { margin-right: auto; }
+
+  /* Group switcher: the selected group recolors the screen */
+  .groups { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-bottom: 1.75rem; }
+  .group-tab { text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: 16px; padding: .9rem 1rem; transition: border-color .15s, background .15s; }
+  .group-tab strong { display: block; font: 800 clamp(1.1rem, 3.2vw, 1.6rem)/1.1 var(--display); letter-spacing: -.01em; color: var(--c); }
+  .group-tab small { color: var(--muted); font-size: .88rem; }
+  .group-tab[data-g="dreamers"] { --c: #4B4FC9; --s: #ECEDFB; }
+  .group-tab[data-g="builders"] { --c: #0F7A6C; --s: #E1F2EF; }
+  .group-tab[data-g="creators"] { --c: #B85F06; --s: #FBEEDD; }
+  .group-tab[aria-pressed="true"] { border-color: var(--c); background: var(--s); }
+  .gdot { display: inline-block; width: .6em; height: .6em; border-radius: 50%; margin-right: .35em; vertical-align: .05em; }
+  .gdot.dreamers { background: #4B4FC9; } .gdot.builders { background: #0F7A6C; } .gdot.creators { background: #B85F06; } .gdot.all { background: #8C93A6; }
+
+  /* Attendance */
+  .toolbar { display: flex; align-items: end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .toolbar label > span { display: block; font-size: .85rem; font-weight: 600; color: var(--muted); margin-bottom: .25rem; }
+  .toolbar input[type=date] { width: auto; }
+  .count { margin-left: auto; font-size: .95rem; color: var(--muted); }
+  .count b { font: 800 1.6rem/1 var(--display); color: var(--accent); margin-right: .2rem; }
+  .roster { list-style: none; margin: 0; padding: 0; overflow: hidden; }
+  .roster li { display: flex; align-items: center; border-top: 1px solid var(--line); }
+  .roster li:first-child { border-top: 0; }
+  .mark { flex: 1; display: flex; align-items: center; gap: .9rem; border: 0; background: transparent; padding: .85rem 1rem; text-align: left; font-size: 1.02rem; min-height: 56px; }
+  .box { width: 28px; height: 28px; border-radius: 8px; border: 2px solid var(--line); display: grid; place-items: center; flex-shrink: 0; transition: background .12s, border-color .12s; }
+  .box svg { width: 16px; height: 16px; opacity: 0; }
+  .mark[aria-pressed="true"] .box { background: var(--accent); border-color: var(--accent); }
+  .mark[aria-pressed="true"] .box svg { opacity: 1; }
+  .mark[aria-pressed="true"] { font-weight: 600; }
+  .remove { border: 0; background: transparent; color: var(--muted); padding: .6rem .9rem; font-size: .85rem; }
+  .remove:hover { color: var(--danger); }
+  .add-row { display: flex; gap: .5rem; margin-top: 1rem; }
+  .add-row input { flex: 1; }
+  .savebar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line); padding: .8rem 1.25rem; }
+  .savebar-inner { max-width: 1160px; margin: 0 auto; display: flex; align-items: center; gap: 1rem; }
+  .savebar .status { color: var(--muted); font-size: .92rem; margin-right: auto; }
+  .savebar .btn-primary { padding: .7rem 1.6rem; }
+
+  /* Attendance summary */
+  .att-mode { max-width: 420px; margin-bottom: 1.25rem; }
+  .toolbar select { width: auto; min-width: 12rem; }
+  .sum-legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .88rem; color: var(--muted); margin-left: auto; align-self: center; }
+  .abs-badge { display: inline-block; min-width: 2rem; text-align: center; font-weight: 700; font-size: .85rem; border-radius: 7px; padding: .1rem .45rem; background: var(--paper); color: var(--ink); }
+  .abs-badge.warn { background: #FFE7CC; color: #B45309; }
+  .abs-badge.alert { background: #FDE2DF; color: #B42318; }
+  tr.warn td { background: #FFF6EC; }
+  tr.alert td { background: #FDF0EE; }
+  .sum-note { padding: .75rem .9rem; color: var(--muted); font-size: .9rem; border-bottom: 1px solid var(--line); }
+
+  /* Calendar */
+  .month-title { text-transform: capitalize; }
+  .legend { display: flex; gap: 1rem; font-size: .88rem; color: var(--muted); margin-bottom: .75rem; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: .35rem; }
+  .legend .lt { background: var(--accent); } .legend .la { border: 2px solid var(--accent); } .legend .lv { background: #2B3245; } .legend .lg { background: #8C93A6; }
+  .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); background: var(--line); gap: 1px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .dow { background: var(--paper); padding: .45rem .5rem; font-size: .8rem; font-weight: 600; color: var(--muted); }
+  .day { background: var(--surface); min-height: 112px; padding: .35rem; display: flex; flex-direction: column; gap: 3px; cursor: pointer; }
+  .day:hover { background: #FBFBFD; }
+  .day.out { background: var(--paper); cursor: default; }
+  .day .num { font-size: .85rem; font-weight: 600; color: var(--muted); padding: .1rem .25rem; align-self: flex-start; border-radius: 6px; }
+  .day.today .num { background: var(--ink); color: #fff; }
+  .chip { border: 0; text-align: left; font-size: .78rem; line-height: 1.25; padding: .2rem .4rem; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+  .chip.topic { background: var(--accent); color: #fff; font-weight: 600; }
+  .chip.activity { background: var(--surface); border: 1.5px solid var(--accent); color: var(--ink); }
+  .chip.volunteer { background: #2B3245; color: #fff; }
+  .chip.all.topic { background: #8C93A6; }
+  .chip.all.activity { border-color: #8C93A6; }
+  .flag { color: var(--warn); font-weight: 700; }
+  .chip.topic .flag, .chip.volunteer .flag { color: #FFD58A; }
+  .agenda { margin-top: 2rem; }
+  .agenda-day { display: grid; grid-template-columns: 5.5rem 1fr; gap: .75rem; padding: .7rem 0; border-top: 1px solid var(--line); }
+  .agenda-day .d { font-weight: 600; color: var(--muted); font-size: .92rem; }
+  .agenda-item { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: .15rem 0; }
+  .agenda-item .k { font-size: .8rem; font-weight: 600; color: var(--accent); margin-right: .4rem; }
+  .agenda-item.all .k { color: #6B7285; }
+  .agenda-item .n { display: block; color: var(--muted); font-size: .9rem; }
+  .needs-tag { display: inline-block; font-size: .78rem; font-weight: 600; color: var(--warn); background: var(--warn-soft); border-radius: 6px; padding: .05rem .4rem; margin-left: .35rem; }
+
+  /* Tables (English summary, admin) */
+  .table-wrap { overflow-x: auto; }
+  table.t { border-collapse: collapse; width: 100%; font-size: .94rem; }
+  table.t th, table.t td { border-bottom: 1px solid var(--line); padding: .55rem .7rem; text-align: left; vertical-align: top; }
+  table.t thead th { font-size: .82rem; color: var(--muted); font-weight: 600; background: var(--paper); white-space: nowrap; }
+  table.t td.num, table.t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.t tbody tr:last-child td { border-bottom: 0; }
+  table.t tfoot td { font-weight: 600; background: var(--paper); border-bottom: 0; }
+  .sess-btn { border: 0; background: transparent; text-align: left; padding: 0; color: var(--ink); font-weight: 600; }
+  .sess-btn small { display: block; color: var(--muted); font-weight: 400; max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sess-btn:hover { color: var(--accent); }
+  .score { font-weight: 600; }
+  .score.low { color: var(--danger); }
+
+  /* Editors */
+  .editor { padding: 1.25rem; }
+  .editor-roster { margin-top: .5rem; border-top: 1px solid var(--line); }
+  .er-row { display: grid; grid-template-columns: minmax(8rem, 1.2fr) 6.5rem 2fr; gap: .6rem; align-items: center; padding: .55rem 0; border-bottom: 1px solid var(--line); }
+  .er-row .tag { font-size: .78rem; color: var(--muted); margin-left: .3rem; }
+  .er-head { font-size: .82rem; font-weight: 600; color: var(--muted); }
+  .editor-actions { display: flex; gap: .5rem; margin-top: 1.25rem; flex-wrap: wrap; }
+  .editor-actions .spacer { margin-right: auto; }
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: .4rem; margin-bottom: 1rem; }
+  .seg label { border: 1.5px solid var(--line); border-radius: 10px; padding: .55rem; text-align: center; font-weight: 600; cursor: pointer; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .seg label:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .check { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; font-weight: 500; }
+  .check input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .participant { border-bottom: 1px solid var(--line); padding: .6rem 0; }
+  .participant textarea { margin-top: .4rem; }
+
+  /* Psych */
+  .private { display: flex; gap: .6rem; align-items: center; background: #EEF0F4; border-radius: 10px; padding: .6rem .85rem; font-size: .92rem; margin-bottom: 1.25rem; }
+  .psy-list .item { display: block; width: 100%; text-align: left; border: 0; border-top: 1px solid var(--line); background: transparent; padding: .8rem 1rem; }
+  .psy-list .item:first-child { border-top: 0; }
+  .psy-list .item:hover { background: #FBFBFD; }
+  .psy-list .meta { font-size: .85rem; color: var(--muted); }
+  .record { padding: 1rem 1.1rem; border-top: 1px solid var(--line); }
+  .record:first-child { border-top: 0; }
+  .record .note { white-space: pre-wrap; margin-top: .3rem; }
+
+  /* Admin */
+  .adm-grid { display: grid; gap: 1.5rem; }
+  .req { padding: 1rem 1.1rem; border-top: 1px solid var(--line); display: grid; gap: .3rem; }
+  .req:first-child { border-top: 0; }
+  .req .who { font-weight: 600; }
+  .req .actions { display: flex; gap: .5rem; margin-top: .4rem; }
+  .status-pill { font-size: .78rem; font-weight: 600; border-radius: 6px; padding: .05rem .45rem; }
+  .status-pill.scheduled { background: #E1F2EF; color: #0F7A6C; }
+  .status-pill.declined { background: #F4E4E2; color: var(--danger); }
+  .status-pill.pending { background: var(--warn-soft); color: var(--warn); }
+  details summary { cursor: pointer; color: var(--muted); font-weight: 600; padding: .8rem 1.1rem; }
+
+  /* Dialog */
+  dialog { border: 0; border-radius: 16px; padding: 0; width: min(500px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); box-shadow: 0 20px 50px rgba(30,36,51,.25); }
+  dialog::backdrop { background: rgba(30,36,51,.35); }
+  .dlg { padding: 1.4rem; }
+  .dlg h3 { font: 800 1.35rem/1.1 var(--display); margin: 0 0 1rem; }
+  .dlg textarea { min-height: 70px; }
+  .needs-box { background: var(--paper); border-radius: 10px; padding: .75rem .85rem .35rem; margin-bottom: 1rem; }
+
+  .toast { position: fixed; left: 50%; top: 1rem; transform: translateX(-50%); background: var(--ink); color: #fff; padding: .6rem 1rem; border-radius: 10px; font-size: .92rem; z-index: 10; }
+  .toast.err { background: var(--danger); }
+
+  @media (max-width: 680px) {
+    .groups { gap: .4rem; }
+    .group-tab { padding: .6rem .65rem; border-radius: 12px; }
+    .group-tab small { font-size: .75rem; }
+    .day { min-height: 64px; padding: .2rem; }
+    .chip { font-size: 0; height: 6px; padding: 0; border-radius: 3px; }
+    .count { margin-left: 0; width: 100%; }
+    .er-row { grid-template-columns: 1fr 5.5rem; }
+    .er-row .comment { grid-column: 1 / -1; }
+    .er-head { display: none; }
+    .row2 { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body data-group="dreamers">
+
+<!-- ============ LOGIN ============ -->
+<section id="login">
+  <form class="login-card" id="loginForm" novalidate>
+    <h1>Lab Talentos</h1>
+    <p data-t="loginSub"></p>
+    <label class="field"><span data-t="email"></span><input type="email" id="email" autocomplete="username" required></label>
+    <label class="field"><span data-t="password"></span><input type="password" id="password" autocomplete="current-password" required></label>
+    <div class="error" id="loginError" role="alert"></div>
+    <button class="btn btn-primary" type="submit" data-t="signIn"></button>
+    <div class="login-lang"><div class="lang" role="group" aria-label="Idioma / Language">
+      <button type="button" data-lang="es">ES</button><button type="button" data-lang="en">EN</button>
+    </div></div>
+  </form>
+</section>
+
+<section id="noAccess" hidden>
+  <div class="login-card">
+    <h1>Lab Talentos</h1>
+    <p data-t="noAccess"></p>
+    <button class="btn" data-signout data-t="signOut"></button>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<div id="app" hidden>
+  <header class="top"><div class="top-inner">
+    <div class="brand">Lab Talentos</div>
+    <nav class="pages" id="nav"></nav>
+    <div class="lang" role="group" aria-label="Idioma / Language">
+      <button type="button" data-lang="es">ES</button><button type="button" data-lang="en">EN</button>
+    </div>
+    <button class="btn btn-ghost" data-signout data-t="signOut"></button>
+  </div></header>
+
+  <main>
+    <div class="groups" id="groups"></div>
+
+    <!-- Attendance -->
+    <section id="page-att" hidden>
+      <div class="seg att-mode" id="attMode">
+        <label><input type="radio" name="attmode" value="take" checked><span data-t="takeAttendance"></span></label>
+        <label><input type="radio" name="attmode" value="summary"><span data-t="summary"></span></label>
+      </div>
+      <div id="attTake">
+        <div class="toolbar">
+          <label><span data-t="date"></span><input type="date" id="attDate"></label>
+          <button class="btn" id="markAll"></button>
+          <div class="count" id="count"></div>
+        </div>
+        <ul class="roster card" id="roster"></ul>
+        <form class="add-row" id="addStudent">
+          <input type="text" id="newStudent" data-tp="addStudentPh" maxlength="120">
+          <button class="btn" type="submit" data-t="add"></button>
+        </form>
+      </div>
+      <div id="attSummary" hidden>
+        <div class="toolbar">
+          <label><span data-t="period"></span>
+            <select id="attPeriod">
+              <option value="month" data-t="thisMonth"></option>
+              <option value="3m" data-t="last3"></option>
+              <option value="all" data-t="allTime"></option>
+            </select>
+          </label>
+          <div class="sum-legend">
+            <span><span class="abs-badge warn">3–5</span> <span data-t="flag3"></span></span>
+            <span><span class="abs-badge alert">6+</span> <span data-t="flag6"></span></span>
+          </div>
+        </div>
+        <div class="card table-wrap" id="attSumTable"></div>
+      </div>
+    </section>
+
+    <!-- Calendar -->
+    <section id="page-cal" hidden>
+      <div class="page-head">
+        <h2 class="page-title month-title grow" id="monthTitle"></h2>
+        <button class="btn" id="prevMonth" aria-label="Previous month">‹</button>
+        <button class="btn" id="todayMonth" data-t="today"></button>
+        <button class="btn" id="nextMonth" aria-label="Next month">›</button>
+        <button class="btn" id="newEntryAll" data-t="addForAll"></button>
+        <button class="btn btn-primary" id="newEntry" data-t="add"></button>
+      </div>
+      <div class="legend">
+        <span><i class="lt"></i><span data-t="topic"></span></span>
+        <span><i class="la"></i><span data-t="activity"></span></span>
+        <span><i class="lv"></i><span data-t="volunteer"></span></span>
+        <span><i class="lg"></i><span data-t="allGroups"></span></span>
+        <span><span class="flag">⚑</span> <span data-t="needsHelp"></span></span>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="agenda" id="agenda"></div>
+    </section>
+
+    <!-- English notes -->
+    <section id="page-eng" hidden>
+      <div id="eng-list">
+        <div class="page-head">
+          <h2 class="page-title month-title grow" id="engMonthTitle"></h2>
+          <button class="btn" id="engPrev" aria-label="Previous month">‹</button>
+          <button class="btn" id="engNext" aria-label="Next month">›</button>
+          <button class="btn btn-primary" id="engNew" data-t="newSession"></button>
+        </div>
+        <div class="card table-wrap" id="engTable"></div>
+      </div>
+      <form class="card editor" id="eng-editor" hidden novalidate>
+        <h3 id="engEdTitle"></h3>
+        <div class="row2">
+          <label class="field"><span data-t="date"></span><input type="date" id="engDate" required></label>
+          <label class="field"><span data-t="sessionTopic"></span><input type="text" id="engTopic" maxlength="160" required></label>
+        </div>
+        <label class="field"><span data-t="notesOpt"></span><textarea id="engNotes" maxlength="3000"></textarea></label>
+        <div class="er-row er-head"><span data-t="student"></span><span data-t="scoreLabel"></span><span data-t="commentOpt"></span></div>
+        <div id="engRoster"></div>
+        <div class="error" id="engError" role="alert"></div>
+        <div class="editor-actions">
+          <button type="button" class="btn btn-ghost btn-danger spacer" id="engDelete" data-t="delete"></button>
+          <button type="button" class="btn" id="engCancel" data-t="cancel"></button>
+          <button type="submit" class="btn btn-primary" data-t="save"></button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Psychologist notes -->
+    <section id="page-psy" hidden>
+      <div class="private"><span aria-hidden="true">🔒</span><span data-t="privateNote"></span></div>
+      <div id="psy-list">
+        <div class="page-head">
+          <h2 class="page-title grow" data-t="psychNotes"></h2>
+          <button class="btn btn-primary" id="psyNew" data-t="newSession"></button>
+        </div>
+        <label class="field" style="max-width:360px"><span data-t="viewRecordOf"></span><select id="psyFilter"></select></label>
+        <div class="card psy-list" id="psyContent"></div>
+      </div>
+      <form class="card editor" id="psy-editor" hidden novalidate>
+        <h3 id="psyEdTitle"></h3>
+        <div class="seg">
+          <label><input type="radio" name="ptype" value="individual" checked><span data-t="individual"></span></label>
+          <label><input type="radio" name="ptype" value="group"><span data-t="groupSession"></span></label>
+        </div>
+        <div class="row2">
+          <label class="field"><span data-t="date"></span><input type="date" id="psyDate" required></label>
+          <label class="field"><span data-t="focusOpt"></span><input type="text" id="psyFocus" maxlength="160"></label>
+        </div>
+        <div id="psyIndividual">
+          <label class="field"><span data-t="student"></span><select id="psyStudent"></select></label>
+          <label class="field"><span data-t="sessionNotes"></span><textarea id="psyNote" style="min-height:160px"></textarea></label>
+        </div>
+        <div id="psyGroup" hidden>
+          <label class="field"><span data-t="group"></span><select id="psyGroupSel"></select></label>
+          <div class="muted" style="font-size:.9rem;margin-bottom:.3rem" data-t="pickParticipants"></div>
+          <div id="psyParticipants"></div>
+        </div>
+        <div class="error" id="psyError" role="alert"></div>
+        <div class="editor-actions">
+          <button type="button" class="btn btn-ghost btn-danger spacer" id="psyDelete" data-t="delete"></button>
+          <button type="button" class="btn" id="psyCancel" data-t="cancel"></button>
+          <button type="submit" class="btn btn-primary" data-t="save"></button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Admin -->
+    <section id="page-adm" hidden>
+      <div class="adm-grid">
+        <div>
+          <h3 data-t="requests"></h3>
+          <div class="card" id="admRequests"></div>
+        </div>
+        <div>
+          <h3 data-t="openNeeds"></h3>
+          <div class="card table-wrap" id="admNeeds"></div>
+        </div>
+        <div>
+          <div class="page-head">
+            <h3 class="grow" style="margin:0" id="admMonthTitle"></h3>
+            <button class="btn btn-sm" id="admPrev" aria-label="Previous month">‹</button>
+            <button class="btn btn-sm" id="admNext" aria-label="Next month">›</button>
+          </div>
+          <div class="card table-wrap" id="admStats"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="savebar" id="savebar" hidden>
+    <div class="savebar-inner">
+      <span class="status" id="saveStatus"></span>
+      <button class="btn btn-primary" id="saveAtt" data-t="save"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar entry dialog -->
+<dialog id="dlg">
+  <form class="dlg" id="entryForm" novalidate>
+    <h3 id="dlgTitle"></h3>
+    <div class="seg" id="kindSeg">
+      <label><input type="radio" name="kind" value="topic" checked><span data-t="topic"></span></label>
+      <label><input type="radio" name="kind" value="activity"><span data-t="activity"></span></label>
+      <label id="kindVolLabel"><input type="radio" name="kind" value="volunteer"><span data-t="volunteer"></span></label>
+    </div>
+    <label class="field"><span data-t="title"></span><input type="text" id="eTitle" maxlength="140" required></label>
+    <label class="field" id="eVolWrap"><span data-t="volunteerName"></span><input type="text" id="eVolName" maxlength="120"></label>
+    <label class="field"><span data-t="notesOpt"></span><textarea id="eNotes" maxlength="2000"></textarea></label>
+    <div class="row2">
+      <label class="field"><span data-t="date"></span><input type="date" id="eDate" required></label>
+      <label class="field"><span data-t="group"></span><select id="eGroup"></select></label>
+    </div>
+    <div class="needs-box">
+      <label class="check"><input type="checkbox" id="eNeedRes"><span data-t="needsResources"></span></label>
+      <label class="check"><input type="checkbox" id="eNeedVol"><span data-t="needsVolunteer"></span></label>
+      <label class="field" id="eNeedNoteWrap" hidden><span data-t="needsNote"></span><input type="text" id="eNeedNote" maxlength="300"></label>
+    </div>
+    <div class="error" id="dlgError" role="alert"></div>
+    <div class="editor-actions">
+      <button type="button" class="btn btn-ghost btn-danger spacer" id="eDelete" data-t="delete"></button>
+      <button type="button" class="btn" id="eCancel" data-t="cancel"></button>
+      <button type="submit" class="btn btn-primary" data-t="save"></button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+/* ===== CONFIG ===== */
+const SUPABASE_URL = 'https://lybrhwnxqjtfnovewwpe.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5YnJod254cWp0Zm5vdmV3d3BlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4OTkyOTYsImV4cCI6MjEwNzQ3NTI5Nn0.MpS8Z_c64rqTAWEhHuTzasdcHBSAbBUsmGp0ybHLTmQ';
+/* ================== */
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const GROUPS = [
+  { id: 'dreamers', name: 'Dreamers', ages: '7–11' },
+  { id: 'builders', name: 'Builders', ages: '12–15' },
+  { id: 'creators', name: 'Creators', ages: '16–18' },
+];
+const gName = id => GROUPS.find(g => g.id === id)?.name || '';
+const ALL = ['admin', 'english', 'psychologist'];
+const NAV = [
+  { id: 'att', key: 'attendance',   roles: ALL,                       groups: true },
+  { id: 'cal', key: 'calendar',     roles: ALL,                       groups: true },
+  { id: 'eng', key: 'englishNotes', roles: ['admin', 'english'],      groups: true },
+  { id: 'psy', key: 'psychNotes',   roles: ['admin', 'psychologist'], groups: false },
+  { id: 'adm', key: 'admin',        roles: ['admin'],                 groups: false },
+];
+
+const T = {
+  es: {
+    loginSub: 'Ingresa con el correo y la contraseña que te enviaron.', email: 'Correo', password: 'Contraseña', signIn: 'Ingresar',
+    signInError: 'Correo o contraseña incorrectos.', signOut: 'Salir',
+    noAccess: 'Tu cuenta todavía no tiene acceso. Pídele a Maria que la active.',
+    attendance: 'Asistencia', calendar: 'Calendario', englishNotes: 'Notas de inglés', psychNotes: 'Notas de psicología', admin: 'Seguimiento',
+    ages: a => `${a} años`, date: 'Fecha', markAll: 'Marcar todos', clearAll: 'Desmarcar todos',
+    count: (p, n) => `<b>${p}</b> de ${n} presentes`, addStudentPh: 'Nombre del estudiante', add: 'Agregar',
+    noStudents: 'Este grupo aún no tiene estudiantes. Agrega el primero en Asistencia.',
+    remove: 'Quitar', removeConfirm: n => `¿Quitar a ${n} de la lista? Su historial se conserva.`,
+    save: 'Guardar', saving: 'Guardando…', saved: 'Guardado', unsaved: 'Cambios sin guardar',
+    recorded: 'Asistencia ya registrada para esta fecha', notRecorded: 'Aún no se ha registrado esta fecha',
+    discard: 'Tienes cambios sin guardar. ¿Descartarlos?',
+    takeAttendance: 'Tomar asistencia', summary: 'Resumen', period: 'Periodo', thisMonth: 'Este mes', last3: 'Últimos 3 meses', allTime: 'Todo', attended: 'Asistió', absences: 'Faltas', lastAttended: 'Última asistencia', flag3: 'faltas', flag6: 'faltas', noAttPeriod: 'No hay asistencia registrada en este periodo.', daysInPeriod: n => `${n} ${n === 1 ? 'día' : 'días'} con asistencia registrada`, flaggedCount: n => `${n} ${n === 1 ? 'estudiante marcado' : 'estudiantes marcados'}`,
+    today: 'Hoy', addForAll: 'Agregar para todos los grupos', topic: 'Tema', activity: 'Actividad', volunteer: 'Voluntariado', allGroups: 'Todos los grupos',
+    needsHelp: 'Necesita apoyo', title: 'Título', notesOpt: 'Notas (opcional)', group: 'Grupo',
+    newItem: 'Nuevo tema o actividad', editItem: 'Editar', delete: 'Eliminar', cancel: 'Cancelar',
+    deleteConfirm: '¿Eliminar? Esta acción no se puede deshacer.', titleRequired: 'Escribe un título.',
+    volunteerName: 'Nombre del voluntario', needsResources: 'Necesita recursos', needsVolunteer: 'Necesita voluntario',
+    needsNote: '¿Qué se necesita?', monthAgenda: 'Este mes',
+    emptyMonth: 'Nada programado este mes. Toca un día para agregar un tema o actividad.',
+    loadError: 'No se pudieron cargar los datos. Revisa tu conexión.', saveError: 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.',
+    deleted: 'Eliminado', studentAdded: 'Estudiante agregado',
+    newSession: 'Nueva sesión', editSession: 'Editar sesión', sessionTopic: 'Tema de la sesión', student: 'Estudiante',
+    scoreLabel: 'Nota (0–100)', commentOpt: 'Comentario (opcional)', absent: 'ausente', average: 'Promedio',
+    noEngSessions: 'No hay sesiones este mes. Crea la primera con “Nueva sesión”.',
+    topicRequired: 'Escribe el tema de la sesión.', scoreInvalid: 'Las notas deben ser números enteros entre 0 y 100.',
+    privateNote: 'Privado: solo la psicóloga y Maria pueden ver estas notas.',
+    viewRecordOf: 'Ver historial de', allSessions: 'Todas las sesiones', individual: 'Individual', groupSession: 'Grupal',
+    focusOpt: 'Enfoque o tema (opcional)', sessionNotes: 'Notas de la sesión', pickParticipants: 'Marca quién participó y escribe la nota de cada uno.',
+    pickStudent: 'Elige un estudiante.', pickOne: 'Marca al menos un participante.', chooseStudent: 'Elige…',
+    noPsySessions: 'Aún no hay sesiones registradas.', noRecord: 'Este estudiante aún no tiene sesiones registradas.',
+    sessionsCount: n => `${n} ${n === 1 ? 'sesión' : 'sesiones'}`,
+    requests: 'Solicitudes de voluntariado', openNeeds: 'Temas y actividades que necesitan apoyo',
+    noRequests: 'No hay solicitudes pendientes. Llegan desde el canal de Slack.', earlier: 'Solicitudes anteriores',
+    schedule: 'Programar', decline: 'Rechazar', declineConfirm: '¿Rechazar esta solicitud?',
+    pending: 'Pendiente', scheduled: 'Programada', declined: 'Rechazada',
+    forItem: 'Para', preferred: 'Fecha preferida', contact: 'Contacto', received: 'Recibida',
+    noNeeds: 'Nada pendiente. Cuando un docente marque que necesita recursos o un voluntario, aparecerá aquí.',
+    needs: 'Necesita', resources: 'recursos', aVolunteer: 'voluntario', item: 'Tema/actividad',
+    monthStats: m => `Actividad de ${m}`, daysRecorded: 'Días con asistencia', attRate: 'Asistencia promedio',
+    engSessions: 'Sesiones de inglés', calItems: 'Temas y actividades', volSessions: 'Sesiones de voluntariado',
+    psyTotal: n => `Sesiones de psicología en el mes: ${n}`,
+    volunteerTitle: n => `Voluntariado: ${n}`,
+    locale: 'es-CO',
+  },
+  en: {
+    loginSub: 'Sign in with the email and password you were sent.', email: 'Email', password: 'Password', signIn: 'Sign in',
+    signInError: 'Wrong email or password.', signOut: 'Sign out',
+    noAccess: 'Your account doesn’t have access yet. Ask Maria to turn it on.',
+    attendance: 'Attendance', calendar: 'Calendar', englishNotes: 'English notes', psychNotes: 'Psychology notes', admin: 'Overview',
+    ages: a => `Ages ${a}`, date: 'Date', markAll: 'Mark all', clearAll: 'Clear all',
+    count: (p, n) => `<b>${p}</b> of ${n} present`, addStudentPh: 'Student name', add: 'Add',
+    noStudents: 'This group has no students yet. Add the first one in Attendance.',
+    remove: 'Remove', removeConfirm: n => `Remove ${n} from the list? Their history is kept.`,
+    save: 'Save', saving: 'Saving…', saved: 'Saved', unsaved: 'Unsaved changes',
+    recorded: 'Attendance already recorded for this date', notRecorded: 'This date hasn’t been recorded yet',
+    discard: 'You have unsaved changes. Discard them?',
+    takeAttendance: 'Take attendance', summary: 'Summary', period: 'Period', thisMonth: 'This month', last3: 'Last 3 months', allTime: 'All time', attended: 'Attended', absences: 'Absences', lastAttended: 'Last attended', flag3: 'absences', flag6: 'absences', noAttPeriod: 'No attendance recorded in this period.', daysInPeriod: n => `${n} ${n === 1 ? 'day' : 'days'} recorded`, flaggedCount: n => `${n} ${n === 1 ? 'student' : 'students'} flagged`,
+    today: 'Today', addForAll: 'Add for all groups', topic: 'Topic', activity: 'Activity', volunteer: 'Volunteer session', allGroups: 'All groups',
+    needsHelp: 'Needs support', title: 'Title', notesOpt: 'Notes (optional)', group: 'Group',
+    newItem: 'New topic or activity', editItem: 'Edit', delete: 'Delete', cancel: 'Cancel',
+    deleteConfirm: 'Delete this? It can’t be undone.', titleRequired: 'Add a title.',
+    volunteerName: 'Volunteer name', needsResources: 'Needs resources', needsVolunteer: 'Needs a volunteer',
+    needsNote: 'What’s needed?', monthAgenda: 'This month',
+    emptyMonth: 'Nothing scheduled this month. Tap a day to add a topic or activity.',
+    loadError: 'Couldn’t load data. Check your connection.', saveError: 'Couldn’t save. Check your connection and try again.',
+    deleted: 'Deleted', studentAdded: 'Student added',
+    newSession: 'New session', editSession: 'Edit session', sessionTopic: 'Session topic', student: 'Student',
+    scoreLabel: 'Score (0–100)', commentOpt: 'Comment (optional)', absent: 'absent', average: 'Average',
+    noEngSessions: 'No sessions this month. Create the first one with “New session”.',
+    topicRequired: 'Add the session topic.', scoreInvalid: 'Scores must be whole numbers from 0 to 100.',
+    privateNote: 'Private: only the psychologist and Maria can see these notes.',
+    viewRecordOf: 'View record for', allSessions: 'All sessions', individual: 'One-on-one', groupSession: 'Group',
+    focusOpt: 'Focus or topic (optional)', sessionNotes: 'Session notes', pickParticipants: 'Check who took part and write a note for each.',
+    pickStudent: 'Choose a student.', pickOne: 'Check at least one participant.', chooseStudent: 'Choose…',
+    noPsySessions: 'No sessions recorded yet.', noRecord: 'No sessions recorded for this student yet.',
+    sessionsCount: n => `${n} ${n === 1 ? 'session' : 'sessions'}`,
+    requests: 'Volunteer requests', openNeeds: 'Topics and activities that need support',
+    noRequests: 'No pending requests. They come in from the Slack channel.', earlier: 'Earlier requests',
+    schedule: 'Schedule', decline: 'Decline', declineConfirm: 'Decline this request?',
+    pending: 'Pending', scheduled: 'Scheduled', declined: 'Declined',
+    forItem: 'For', preferred: 'Preferred date', contact: 'Contact', received: 'Received',
+    noNeeds: 'Nothing open. When a teacher flags that they need resources or a volunteer, it shows up here.',
+    needs: 'Needs', resources: 'resources', aVolunteer: 'volunteer', item: 'Topic/activity',
+    monthStats: m => `Activity in ${m}`, daysRecorded: 'Days with attendance', attRate: 'Average attendance',
+    engSessions: 'English sessions', calItems: 'Topics and activities', volSessions: 'Volunteer sessions',
+    psyTotal: n => `Psychology sessions this month: ${n}`,
+    volunteerTitle: n => `Volunteer: ${n}`,
+    locale: 'en-US',
+  },
+};
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const monthBounds = d => [ymd(new Date(d.getFullYear(), d.getMonth(), 1)), ymd(new Date(d.getFullYear(), d.getMonth() + 1, 0))];
+const addMonths = (d, n) => new Date(d.getFullYear(), d.getMonth() + n, 1);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+const fmt = (ds, o) => new Intl.DateTimeFormat(t().locale, o).format(parseYmd(ds));
+const fmtShort = ds => fmt(ds, { day: 'numeric', month: 'short' });
+const fmtLong = ds => fmt(ds, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+const fmtMonth = d => new Intl.DateTimeFormat(t().locale, { month: 'long', year: 'numeric' }).format(d);
+let toastTimer;
+function toast(msg, isErr) {
+  document.querySelector('.toast')?.remove();
+  const el = document.createElement('div');
+  el.className = 'toast' + (isErr ? ' err' : ''); el.setAttribute('role', 'status'); el.textContent = msg;
+  document.body.appendChild(el); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.remove(), 2600);
+}
+const confirmDiscard = () => !state.dirty || confirm(t().discard);
+
+/* ---------- state ---------- */
+const now = new Date();
+const state = {
+  lang: store.get('lt-lang') === 'en' ? 'en' : 'es',
+  role: null, user: null, page: null, dirty: false,
+  group: GROUPS.some(g => g.id === store.get('lt-group')) ? store.get('lt-group') : 'dreamers',
+  date: ymd(now), month: addMonths(now, 0), attMode: 'take', attPeriod: 'month', sum: { students: [], rows: [] },
+  students: [], marks: {}, hasRecord: false,
+  entries: [], editing: null, request: null,
+  eng: { month: addMonths(now, 0), sessions: [], scores: {}, students: [], editing: null },
+  psy: { students: [], filter: '', editing: null, editingNotes: [] },
+  adm: { month: addMonths(now, 0) },
+};
+const t = () => T[state.lang];
+const isAdmin = () => state.role === 'admin';
+
+/* ---------- language & shell ---------- */
+function applyLang() {
+  document.documentElement.lang = state.lang;
+  document.querySelectorAll('[data-t]').forEach(el => { const v = t()[el.dataset.t]; if (typeof v === 'string') el.textContent = v; });
+  document.querySelectorAll('[data-tp]').forEach(el => { el.placeholder = t()[el.dataset.tp]; });
+  document.querySelectorAll('[data-lang]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === state.lang));
+  if (state.user && state.role) { renderNav(); renderGroups(); rerender(); }
+}
+document.querySelectorAll('[data-lang]').forEach(b => b.addEventListener('click', () => {
+  state.lang = b.dataset.lang; store.set('lt-lang', state.lang); applyLang();
+}));
+
+function rerender() {
+  ({ att: () => state.attMode === 'take' ? renderAttendance() : renderAttSummary(), cal: renderCalendar, eng: () => $('eng-editor').hidden ? renderEngList() : null,
+     psy: () => $('psy-editor').hidden ? loadPsych() : null, adm: loadAdmin })[state.page]?.();
+}
+
+function renderNav() {
+  $('nav').innerHTML = NAV.filter(n => n.roles.includes(state.role)).map(n =>
+    `<button data-page="${n.id}"${n.id === state.page ? ' aria-current="page"' : ''}>${esc(t()[n.key])}</button>`).join('');
+}
+$('nav').addEventListener('click', e => { const b = e.target.closest('[data-page]'); if (b) setPage(b.dataset.page); });
+
+function renderGroups() {
+  const nav = NAV.find(n => n.id === state.page);
+  document.body.dataset.group = state.group;
+  document.body.classList.toggle('neutral', !!nav && !nav.groups);
+  $('groups').hidden = !nav || !nav.groups;
+  $('groups').innerHTML = GROUPS.map(g => `
+    <button class="group-tab" data-g="${g.id}" aria-pressed="${g.id === state.group}">
+      <strong>${g.name}</strong><small>${esc(t().ages(g.ages))}</small>
+    </button>`).join('');
+}
+$('groups').addEventListener('click', e => {
+  const b = e.target.closest('.group-tab');
+  if (!b || b.dataset.g === state.group || !confirmDiscard()) return;
+  state.dirty = false; state.group = b.dataset.g; store.set('lt-group', state.group);
+  renderGroups(); loadPage();
+});
+
+function setPage(p) {
+  if (p === state.page || !confirmDiscard()) return;
+  state.dirty = false; state.page = p;
+  NAV.forEach(n => { $('page-' + n.id).hidden = n.id !== p; });
+  $('savebar').hidden = p !== 'att' || state.attMode !== 'take';
+  $('eng-editor').hidden = true; $('eng-list').hidden = false;
+  $('psy-editor').hidden = true; $('psy-list').hidden = false;
+  renderNav(); renderGroups(); loadPage();
+}
+function loadPage() {
+  ({ att: loadAttendance, cal: loadCalendar, eng: loadEnglish, psy: loadPsych, adm: loadAdmin })[state.page]();
+}
+window.addEventListener('beforeunload', e => { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------- auth ---------- */
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault(); $('loginError').textContent = '';
+  const { data, error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('password').value });
+  if (error) { $('loginError').textContent = t().signInError; return; }
+  enter(data.user);
+});
+document.querySelectorAll('[data-signout]').forEach(b => b.addEventListener('click', async () => {
+  if (!confirmDiscard()) return;
+  await sb.auth.signOut();
+  Object.assign(state, { user: null, role: null, page: null, dirty: false });
+  $('app').hidden = true; $('noAccess').hidden = true; $('login').hidden = false; $('password').value = '';
+}));
+async function enter(user) {
+  state.user = user;
+  const { data: role, error } = await sb.rpc('my_role');
+  $('login').hidden = true;
+  if (error || !role) { $('noAccess').hidden = false; return; }
+  state.role = role;
+  $('app').hidden = false;
+  applyLang();
+  setPage('att');
+}
+
+async function getStudents(group) {
+  let q = sb.from('students').select('id, full_name, group_id').eq('active', true);
+  if (group) q = q.eq('group_id', group);
+  const { data, error } = await q.order('full_name');
+  if (error) { toast(t().loadError, true); return null; }
+  return data;
+}
+
+/* ================= ATTENDANCE ================= */
+$('attDate').value = state.date;
+$('attDate').addEventListener('change', e => {
+  if (!e.target.value) { e.target.value = state.date; return; }
+  if (!confirmDiscard()) { e.target.value = state.date; return; }
+  state.dirty = false; state.date = e.target.value; loadAttendance();
+});
+async function loadAttendance() {
+  if (state.attMode === 'summary') return loadAttSummary();
+  const group = state.group, date = state.date;
+  const st = await getStudents(group); if (!st) return;
+  let att = [];
+  if (st.length) {
+    const res = await sb.from('attendance').select('student_id, present').eq('date', date).in('student_id', st.map(s => s.id));
+    if (res.error) { toast(t().loadError, true); return; }
+    att = res.data;
+  }
+  if (group !== state.group || date !== state.date || state.page !== 'att') return;
+  state.students = st;
+  state.marks = Object.fromEntries(att.map(a => [a.student_id, a.present]));
+  state.hasRecord = att.length > 0; state.dirty = false;
+  renderAttendance();
+}
+const checkSvg = '<svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+function renderAttendance() {
+  $('roster').innerHTML = !state.students.length ? `<li class="empty">${esc(t().noStudents)}</li>` :
+    state.students.map(s => `
+      <li>
+        <button class="mark" data-id="${s.id}" aria-pressed="${!!state.marks[s.id]}"><span class="box">${checkSvg}</span><span>${esc(s.full_name)}</span></button>
+        <button class="remove" data-remove="${s.id}">${esc(t().remove)}</button>
+      </li>`).join('');
+  updateCounts();
+}
+function updateCounts() {
+  const n = state.students.length, p = state.students.filter(s => state.marks[s.id]).length;
+  $('count').innerHTML = n ? t().count(p, n) : '';
+  $('markAll').hidden = !n;
+  $('markAll').textContent = n && p === n ? t().clearAll : t().markAll;
+  $('saveAtt').disabled = !n || !state.dirty;
+  $('saveStatus').textContent = !n ? '' : state.dirty ? t().unsaved : state.hasRecord ? t().recorded : t().notRecorded;
+}
+$('roster').addEventListener('click', async e => {
+  const mark = e.target.closest('.mark');
+  if (mark) {
+    const id = mark.dataset.id; state.marks[id] = !state.marks[id];
+    mark.setAttribute('aria-pressed', state.marks[id]); state.dirty = true; updateCounts(); return;
+  }
+  const rm = e.target.closest('[data-remove]');
+  if (rm) {
+    const s = state.students.find(x => x.id === rm.dataset.remove);
+    if (!s || !confirm(t().removeConfirm(s.full_name))) return;
+    const { error } = await sb.from('students').update({ active: false }).eq('id', s.id);
+    if (error) { toast(t().saveError, true); return; }
+    state.students = state.students.filter(x => x.id !== s.id); delete state.marks[s.id]; renderAttendance();
+  }
+});
+$('markAll').addEventListener('click', () => {
+  const all = state.students.every(s => state.marks[s.id]);
+  state.students.forEach(s => { state.marks[s.id] = !all; }); state.dirty = true; renderAttendance();
+});
+$('saveAtt').addEventListener('click', async () => {
+  const btn = $('saveAtt'); btn.disabled = true; btn.textContent = t().saving;
+  const rows = state.students.map(s => ({ student_id: s.id, date: state.date, present: !!state.marks[s.id], updated_at: new Date().toISOString() }));
+  const { error } = await sb.from('attendance').upsert(rows, { onConflict: 'student_id,date' });
+  btn.textContent = t().save;
+  if (error) { toast(t().saveError, true); updateCounts(); return; }
+  state.dirty = false; state.hasRecord = true; updateCounts(); toast(t().saved);
+});
+$('addStudent').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name = $('newStudent').value.trim().replace(/\s+/g, ' '); if (!name) return;
+  const { data, error } = await sb.from('students').insert({ group_id: state.group, full_name: name }).select('id, full_name, group_id').single();
+  if (error) { toast(t().saveError, true); return; }
+  $('newStudent').value = '';
+  state.students.push(data); state.students.sort((a, b) => a.full_name.localeCompare(b.full_name, state.lang));
+  renderAttendance(); toast(t().studentAdded);
+});
+
+
+/* ---------- attendance summary ---------- */
+$('attMode').addEventListener('change', e => {
+  if (e.target.name !== 'attmode') return;
+  if (state.attMode === 'take' && !confirmDiscard()) { $('attMode').querySelector('[value=take]').checked = true; return; }
+  state.dirty = false; state.attMode = e.target.value;
+  $('attTake').hidden = state.attMode !== 'take';
+  $('attSummary').hidden = state.attMode !== 'summary';
+  $('savebar').hidden = state.attMode !== 'take';
+  loadAttendance();
+});
+$('attPeriod').addEventListener('change', e => { state.attPeriod = e.target.value; loadAttSummary(); });
+function periodStart(p) {
+  const d = new Date();
+  if (p === 'month') return ymd(new Date(d.getFullYear(), d.getMonth(), 1));
+  if (p === '3m') return ymd(new Date(d.getFullYear(), d.getMonth() - 2, 1));
+  return null;
+}
+async function loadAttSummary() {
+  const group = state.group, period = state.attPeriod;
+  const st = await getStudents(group); if (!st) return;
+  let rows = [];
+  if (st.length) {
+    const start = periodStart(period);
+    for (let from = 0; ; from += 1000) {
+      let q = sb.from('attendance').select('student_id, date, present').in('student_id', st.map(s => s.id)).order('date').order('id').range(from, from + 999);
+      if (start) q = q.gte('date', start);
+      const { data, error } = await q;
+      if (error) { toast(t().loadError, true); return; }
+      rows = rows.concat(data);
+      if (data.length < 1000) break;
+    }
+  }
+  if (group !== state.group || period !== state.attPeriod || state.page !== 'att' || state.attMode !== 'summary') return;
+  state.sum = { students: st, rows };
+  renderAttSummary();
+}
+function renderAttSummary() {
+  const { students, rows } = state.sum;
+  $('attPeriod').value = state.attPeriod;
+  if (!students.length) { $('attSumTable').innerHTML = `<p class="empty">${esc(t().noStudents)}</p>`; return; }
+  const days = new Set(rows.map(r => r.date)).size;
+  if (!days) { $('attSumTable').innerHTML = `<p class="empty">${esc(t().noAttPeriod)}</p>`; return; }
+  const stats = Object.fromEntries(students.map(s => [s.id, { p: 0, a: 0, last: null }]));
+  rows.forEach(r => {
+    const x = stats[r.student_id]; if (!x) return;
+    if (r.present) { x.p++; if (!x.last || r.date > x.last) x.last = r.date; } else x.a++;
+  });
+  const list = students.map(s => ({ ...s, ...stats[s.id] }))
+    .sort((a, b) => b.a - a.a || a.full_name.localeCompare(b.full_name, state.lang));
+  const level = a => a > 5 ? 'alert' : a >= 3 ? 'warn' : '';
+  const flagged = list.filter(x => level(x.a)).length;
+  $('attSumTable').innerHTML = `<div class="sum-note">${esc(t().daysInPeriod(days))}${flagged ? ' · ' + esc(t().flaggedCount(flagged)) : ''}</div>
+    <table class="t"><thead><tr><th>${esc(t().student)}</th><th class="num">${esc(t().attended)}</th><th class="num">${esc(t().absences)}</th><th class="num">%</th><th>${esc(t().lastAttended)}</th></tr></thead>
+    <tbody>${list.map(x => { const lv = level(x.a), rec = x.p + x.a; return `
+      <tr class="${lv}"><td>${esc(x.full_name)}</td>
+        <td class="num">${x.p}</td>
+        <td class="num"><span class="abs-badge ${lv}">${x.a}</span></td>
+        <td class="num">${rec ? Math.round(100 * x.p / rec) + '%' : '–'}</td>
+        <td>${x.last ? esc(fmtShort(x.last)) : '–'}</td></tr>`; }).join('')}</tbody></table>`;
+}
+
+/* ================= CALENDAR ================= */
+$('prevMonth').addEventListener('click', () => { state.month = addMonths(state.month, -1); loadCalendar(); });
+$('nextMonth').addEventListener('click', () => { state.month = addMonths(state.month, 1); loadCalendar(); });
+$('todayMonth').addEventListener('click', () => { state.month = addMonths(new Date(), 0); loadCalendar(); });
+function defaultCalDate() {
+  const d = new Date(), inMonth = d.getFullYear() === state.month.getFullYear() && d.getMonth() === state.month.getMonth();
+  return ymd(inMonth ? d : state.month);
+}
+$('newEntry').addEventListener('click', () => openEntry(null, defaultCalDate()));
+$('newEntryAll').addEventListener('click', () => openEntry(null, defaultCalDate(), { kind: 'activity', group_id: null }));
+async function loadCalendar() {
+  const group = state.group, [first, last] = monthBounds(state.month);
+  const { data, error } = await sb.from('calendar_entries').select('*').gte('date', first).lte('date', last)
+    .or(`group_id.eq.${group},group_id.is.null`).order('date').order('created_at');
+  if (error) { toast(t().loadError, true); return; }
+  if (group !== state.group || first !== monthBounds(state.month)[0] || state.page !== 'cal') return;
+  state.entries = data; renderCalendar();
+}
+const kindLabel = k => ({ topic: t().topic, activity: t().activity, volunteer: t().volunteer })[k];
+const hasNeeds = e => e.needs_resources || e.needs_volunteer;
+function renderCalendar() {
+  const y = state.month.getFullYear(), m = state.month.getMonth(), loc = t().locale;
+  $('monthTitle').textContent = fmtMonth(state.month);
+  const dowFmt = new Intl.DateTimeFormat(loc, { weekday: 'short' });
+  const dows = Array.from({ length: 7 }, (_, i) => dowFmt.format(new Date(2024, 0, 1 + i))); // Monday first
+  const offset = (new Date(y, m, 1).getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate();
+  const cells = Math.ceil((offset + days) / 7) * 7, todayStr = ymd(new Date());
+  const byDate = {}; state.entries.forEach(e => { (byDate[e.date] ||= []).push(e); });
+  let html = dows.map(d => `<div class="dow">${esc(d)}</div>`).join('');
+  for (let i = 0; i < cells; i++) {
+    const dn = i - offset + 1;
+    if (dn < 1 || dn > days) { html += '<div class="day out" aria-hidden="true"></div>'; continue; }
+    const ds = ymd(new Date(y, m, dn));
+    const chips = (byDate[ds] || []).map(e =>
+      `<button class="chip ${e.kind}${e.group_id ? '' : ' all'}" data-entry="${e.id}" title="${esc(e.title)}">${hasNeeds(e) ? '<span class="flag">⚑</span> ' : ''}${esc(e.title)}</button>`).join('');
+    html += `<div class="day${ds === todayStr ? ' today' : ''}" data-date="${ds}" role="button" tabindex="0" aria-label="${esc(fmtLong(ds))}"><span class="num">${dn}</span>${chips}</div>`;
+  }
+  $('grid').innerHTML = html;
+  const dates = Object.keys(byDate).sort();
+  $('agenda').innerHTML = `<h3>${esc(t().monthAgenda)}</h3>` + (dates.length ? dates.map(ds => `
+    <div class="agenda-day"><div class="d">${esc(fmt(ds, { weekday: 'short', day: 'numeric' }))}</div><div>${byDate[ds].map(e => `
+      <button class="agenda-item${e.group_id ? '' : ' all'}" data-entry="${e.id}">
+        <span class="k">${esc(kindLabel(e.kind))}${e.group_id ? '' : ' · ' + esc(t().allGroups)}</span>${esc(e.title)}${needsTags(e)}
+        ${e.notes ? `<span class="n">${esc(e.notes)}</span>` : ''}
+      </button>`).join('')}</div></div>`).join('') : `<p class="empty">${esc(t().emptyMonth)}</p>`);
+}
+function needsTags(e) {
+  return (e.needs_resources ? `<span class="needs-tag">${esc(t().needsResources)}</span>` : '') +
+         (e.needs_volunteer ? `<span class="needs-tag">${esc(t().needsVolunteer)}</span>` : '');
+}
+function onCalClick(e) {
+  const chip = e.target.closest('[data-entry]');
+  if (chip) { e.stopPropagation(); openEntry(state.entries.find(x => x.id === chip.dataset.entry)); return; }
+  const day = e.target.closest('.day[data-date]'); if (day) openEntry(null, day.dataset.date);
+}
+$('grid').addEventListener('click', onCalClick);
+$('agenda').addEventListener('click', onCalClick);
+$('grid').addEventListener('keydown', e => {
+  const day = e.target.closest('.day[data-date]');
+  if (day && e.target === day && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openEntry(null, day.dataset.date); }
+});
+
+/* ---------- entry dialog ---------- */
+function syncDialog() {
+  const kind = $('entryForm').kind.value;
+  $('eVolWrap').hidden = kind !== 'volunteer';
+  $('eNeedNoteWrap').hidden = !($('eNeedRes').checked || $('eNeedVol').checked);
+}
+$('entryForm').addEventListener('change', syncDialog);
+function openEntry(entry, date, preset = {}, request = null) {
+  const e = entry || preset;
+  const locked = entry && entry.kind === 'volunteer' && !isAdmin();
+  state.editing = entry || null; state.request = request;
+  $('dlgTitle').textContent = entry ? t().editItem : request ? t().schedule : t().newItem;
+  $('dlgError').textContent = '';
+  $('kindVolLabel').hidden = !isAdmin();
+  $('entryForm').kind.value = e.kind || 'topic';
+  $('eTitle').value = e.title || ''; $('eVolName').value = e.volunteer_name || ''; $('eNotes').value = e.notes || '';
+  $('eDate').value = e.date || date;
+  $('eGroup').innerHTML = GROUPS.map(g => `<option value="${g.id}">${g.name}</option>`).join('') + `<option value="">${esc(t().allGroups)}</option>`;
+  $('eGroup').value = entry ? (entry.group_id || '') : ('group_id' in preset ? (preset.group_id || '') : state.group);
+  $('eNeedRes').checked = !!e.needs_resources; $('eNeedVol').checked = !!e.needs_volunteer; $('eNeedNote').value = e.needs_note || '';
+  $('eDelete').hidden = !entry || locked;
+  $('entryForm').querySelectorAll('input, textarea, select, button[type=submit]').forEach(el => { el.disabled = locked; });
+  syncDialog();
+  $('dlg').showModal(); if (!locked) $('eTitle').focus();
+}
+$('eCancel').addEventListener('click', () => $('dlg').close());
+$('entryForm').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const title = $('eTitle').value.trim();
+  if (!title) { $('dlgError').textContent = t().titleRequired; return; }
+  if (!$('eDate').value) return;
+  const kind = $('entryForm').kind.value, needs = $('eNeedRes').checked || $('eNeedVol').checked;
+  const row = {
+    kind, title, notes: $('eNotes').value.trim() || null, date: $('eDate').value, group_id: $('eGroup').value || null,
+    needs_resources: $('eNeedRes').checked, needs_volunteer: $('eNeedVol').checked,
+    needs_note: needs ? ($('eNeedNote').value.trim() || null) : null,
+    volunteer_name: kind === 'volunteer' ? ($('eVolName').value.trim() || null) : null,
+    updated_at: new Date().toISOString(),
+  };
+  const res = state.editing
+    ? await sb.from('calendar_entries').update(row).eq('id', state.editing.id).select('id').single()
+    : await sb.from('calendar_entries').insert(row).select('id').single();
+  if (res.error) { $('dlgError').textContent = t().saveError; return; }
+  if (state.request) {
+    const { error } = await sb.from('volunteer_requests').update({ status: 'scheduled', scheduled_entry_id: res.data.id, handled_at: new Date().toISOString() }).eq('id', state.request.id);
+    if (error) { $('dlgError').textContent = t().saveError; return; }
+  }
+  $('dlg').close(); toast(t().saved); loadPage();
+});
+$('eDelete').addEventListener('click', async () => {
+  if (!state.editing || !confirm(t().deleteConfirm)) return;
+  const { error } = await sb.from('calendar_entries').delete().eq('id', state.editing.id);
+  if (error) { $('dlgError').textContent = t().saveError; return; }
+  $('dlg').close(); toast(t().deleted); loadPage();
+});
+
+/* ================= ENGLISH NOTES ================= */
+$('engPrev').addEventListener('click', () => { state.eng.month = addMonths(state.eng.month, -1); loadEnglish(); });
+$('engNext').addEventListener('click', () => { state.eng.month = addMonths(state.eng.month, 1); loadEnglish(); });
+$('engNew').addEventListener('click', () => openEngEditor(null));
+async function loadEnglish() {
+  const group = state.group, [first, last] = monthBounds(state.eng.month);
+  const st = await getStudents(group); if (!st) return;
+  const { data: sessions, error } = await sb.from('english_sessions').select('id, date, topic, notes')
+    .eq('group_id', group).gte('date', first).lte('date', last).order('date').order('created_at');
+  if (error) { toast(t().loadError, true); return; }
+  let scores = [];
+  if (sessions.length) {
+    const r = await sb.from('english_scores').select('session_id, student_id, score, comment').in('session_id', sessions.map(s => s.id));
+    if (r.error) { toast(t().loadError, true); return; }
+    scores = r.data;
+  }
+  if (group !== state.group || state.page !== 'eng') return;
+  const map = {}; scores.forEach(s => { (map[s.session_id] ||= {})[s.student_id] = s; });
+  Object.assign(state.eng, { students: st, sessions, scores: map });
+  renderEngList();
+}
+const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
+const scoreCell = v => v == null ? '<span class="muted">–</span>' : `<span class="score${v < 60 ? ' low' : ''}">${v}</span>`;
+function renderEngList() {
+  const { sessions, students, scores } = state.eng;
+  $('engMonthTitle').textContent = fmtMonth(state.eng.month);
+  if (!sessions.length) { $('engTable').innerHTML = `<p class="empty">${esc(t().noEngSessions)}</p>`; return; }
+  const head = sessions.map(s => `<th><button class="sess-btn" data-sess="${s.id}">${esc(fmtShort(s.date))}<small title="${esc(s.topic)}">${esc(s.topic)}</small></button></th>`).join('');
+  const body = students.map(st => {
+    const vals = sessions.map(s => scores[s.id]?.[st.id]?.score ?? null);
+    return `<tr><td>${esc(st.full_name)}</td>${vals.map(v => `<td class="num">${scoreCell(v)}</td>`).join('')}<td class="num">${scoreCell(avg(vals.filter(v => v != null)))}</td></tr>`;
+  }).join('');
+  const foot = sessions.map(s => `<td class="num">${scoreCell(avg(Object.values(scores[s.id] || {}).map(x => x.score).filter(v => v != null)))}</td>`).join('');
+  $('engTable').innerHTML = `<table class="t"><thead><tr><th>${esc(t().student)}</th>${head}<th class="num">${esc(t().average)}</th></tr></thead>
+    <tbody>${body || `<tr><td colspan="${sessions.length + 2}" class="muted">${esc(t().noStudents)}</td></tr>`}</tbody>
+    <tfoot><tr><td>${esc(t().average)}</td>${foot}<td></td></tr></tfoot></table>`;
+}
+$('engTable').addEventListener('click', e => {
+  const b = e.target.closest('[data-sess]'); if (b) openEngEditor(state.eng.sessions.find(s => s.id === b.dataset.sess));
+});
+async function absentSet(date, ids) {
+  if (!ids.length || !date) return new Set();
+  const { data } = await sb.from('attendance').select('student_id, present').eq('date', date).in('student_id', ids);
+  return new Set((data || []).filter(a => !a.present).map(a => a.student_id));
+}
+async function openEngEditor(session) {
+  state.eng.editing = session;
+  $('engEdTitle').textContent = session ? t().editSession : t().newSession;
+  $('engDate').value = session ? session.date : ymd(new Date());
+  $('engTopic').value = session?.topic || ''; $('engNotes').value = session?.notes || '';
+  $('engError').textContent = ''; $('engDelete').hidden = !session;
+  await renderEngRoster(true);
+  $('eng-list').hidden = true; $('eng-editor').hidden = false; state.dirty = false; $('engTopic').focus();
+}
+async function renderEngRoster(prefill) {
+  const s = state.eng.editing, existing = (s && state.eng.scores[s.id]) || {};
+  const prev = {};
+  if (!prefill) $('engRoster').querySelectorAll('[data-st]').forEach(r => { prev[r.dataset.st] = [r.querySelector('.sc').value, r.querySelector('.cm').value]; });
+  const absent = await absentSet($('engDate').value, state.eng.students.map(x => x.id));
+  $('engRoster').innerHTML = state.eng.students.length ? state.eng.students.map(st => {
+    const [sc, cm] = prefill ? [existing[st.id]?.score ?? '', existing[st.id]?.comment ?? ''] : (prev[st.id] || ['', '']);
+    return `<div class="er-row" data-st="${st.id}">
+      <span>${esc(st.full_name)}${absent.has(st.id) ? `<span class="tag">(${esc(t().absent)})</span>` : ''}</span>
+      <input type="number" class="sc" min="0" max="100" step="1" inputmode="numeric" value="${esc(sc)}" aria-label="${esc(t().scoreLabel)} ${esc(st.full_name)}">
+      <input type="text" class="cm comment" maxlength="300" value="${esc(cm)}" aria-label="${esc(t().commentOpt)} ${esc(st.full_name)}">
+    </div>`; }).join('') : `<p class="empty">${esc(t().noStudents)}</p>`;
+}
+$('engDate').addEventListener('change', () => renderEngRoster(false));
+$('eng-editor').addEventListener('input', () => { state.dirty = true; });
+$('engCancel').addEventListener('click', () => { if (!confirmDiscard()) return; state.dirty = false; $('eng-editor').hidden = true; $('eng-list').hidden = false; });
+$('eng-editor').addEventListener('submit', async e => {
+  e.preventDefault(); $('engError').textContent = '';
+  const topic = $('engTopic').value.trim(), date = $('engDate').value;
+  if (!topic || !date) { $('engError').textContent = t().topicRequired; return; }
+  const filled = [], blank = [];
+  for (const r of $('engRoster').querySelectorAll('[data-st]')) {
+    const raw = r.querySelector('.sc').value.trim(), comment = r.querySelector('.cm').value.trim();
+    let score = null;
+    if (raw !== '') { score = Number(raw); if (!Number.isInteger(score) || score < 0 || score > 100) { $('engError').textContent = t().scoreInvalid; return; } }
+    (score != null || comment) ? filled.push({ student_id: r.dataset.st, score, comment: comment || null }) : blank.push(r.dataset.st);
+  }
+  const row = { group_id: state.group, date, topic, notes: $('engNotes').value.trim() || null, updated_at: new Date().toISOString() };
+  const res = state.eng.editing
+    ? await sb.from('english_sessions').update(row).eq('id', state.eng.editing.id).select('id').single()
+    : await sb.from('english_sessions').insert(row).select('id').single();
+  if (res.error) { $('engError').textContent = t().saveError; return; }
+  const id = res.data.id;
+  if (filled.length) {
+    const r = await sb.from('english_scores').upsert(filled.map(f => ({ ...f, session_id: id })), { onConflict: 'session_id,student_id' });
+    if (r.error) { $('engError').textContent = t().saveError; return; }
+  }
+  if (blank.length && state.eng.editing) await sb.from('english_scores').delete().eq('session_id', id).in('student_id', blank);
+  state.dirty = false; toast(t().saved);
+  state.eng.month = addMonths(parseYmd(date), 0);
+  $('eng-editor').hidden = true; $('eng-list').hidden = false; loadEnglish();
+});
+$('engDelete').addEventListener('click', async () => {
+  if (!state.eng.editing || !confirm(t().deleteConfirm)) return;
+  const { error } = await sb.from('english_sessions').delete().eq('id', state.eng.editing.id);
+  if (error) { $('engError').textContent = t().saveError; return; }
+  state.dirty = false; toast(t().deleted); $('eng-editor').hidden = true; $('eng-list').hidden = false; loadEnglish();
+});
+
+/* ================= PSYCHOLOGY NOTES ================= */
+function studentOptions(selected, placeholder) {
+  return (placeholder ? `<option value="">${esc(placeholder)}</option>` : '') + GROUPS.map(g => {
+    const list = state.psy.students.filter(s => s.group_id === g.id);
+    return list.length ? `<optgroup label="${g.name}">${list.map(s => `<option value="${s.id}"${s.id === selected ? ' selected' : ''}>${esc(s.full_name)}</option>`).join('')}</optgroup>` : '';
+  }).join('');
+}
+async function loadPsych() {
+  const st = await getStudents(null); if (!st) return;
+  state.psy.students = st;
+  $('psyFilter').innerHTML = studentOptions(state.psy.filter, null).replace(/^/, `<option value="">${esc(t().allSessions)}</option>`);
+  $('psyFilter').value = state.psy.filter;
+  const sid = state.psy.filter;
+  if (sid) {
+    const { data, error } = await sb.from('psych_notes').select('note, psych_sessions(id, date, session_type, group_id, focus)').eq('student_id', sid);
+    if (error) { toast(t().loadError, true); return; }
+    const recs = data.filter(r => r.psych_sessions).sort((a, b) => b.psych_sessions.date.localeCompare(a.psych_sessions.date));
+    $('psyContent').innerHTML = recs.length ? `<div class="record muted">${esc(t().sessionsCount(recs.length))}</div>` + recs.map(r => { const s = r.psych_sessions; return `
+      <div class="record"><button class="sess-btn" data-psy="${s.id}">${esc(fmtLong(s.date))}</button>
+        <div class="muted" style="font-size:.88rem">${esc(s.session_type === 'group' ? t().groupSession + ' · ' + gName(s.group_id) : t().individual)}${s.focus ? ' · ' + esc(s.focus) : ''}</div>
+        <div class="note">${esc(r.note)}</div></div>`; }).join('') : `<p class="empty">${esc(t().noRecord)}</p>`;
+    return;
+  }
+  const { data, error } = await sb.from('psych_sessions').select('id, date, session_type, group_id, focus, psych_notes(student_id)').order('date', { ascending: false }).limit(150);
+  if (error) { toast(t().loadError, true); return; }
+  const nameOf = id => st.find(s => s.id === id)?.full_name || '—';
+  $('psyContent').innerHTML = data.length ? data.map(s => {
+    const who = s.session_type === 'group' ? `${gName(s.group_id)} (${s.psych_notes.length})` : nameOf(s.psych_notes[0]?.student_id);
+    return `<button class="item" data-psy="${s.id}"><strong>${esc(who)}</strong>
+      <div class="meta">${esc(fmtLong(s.date))} · ${esc(s.session_type === 'group' ? t().groupSession : t().individual)}${s.focus ? ' · ' + esc(s.focus) : ''}</div></button>`;
+  }).join('') : `<p class="empty">${esc(t().noPsySessions)}</p>`;
+}
+$('psyFilter').addEventListener('change', e => { state.psy.filter = e.target.value; loadPsych(); });
+$('psyContent').addEventListener('click', e => { const b = e.target.closest('[data-psy]'); if (b) openPsyEditor(b.dataset.psy); });
+$('psyNew').addEventListener('click', () => openPsyEditor(null));
+
+async function openPsyEditor(id) {
+  let session = null, notes = [];
+  if (id) {
+    const { data, error } = await sb.from('psych_sessions').select('*, psych_notes(student_id, note)').eq('id', id).single();
+    if (error) { toast(t().loadError, true); return; }
+    session = data; notes = data.psych_notes;
+  }
+  state.psy.editing = session; state.psy.editingNotes = notes;
+  $('psyEdTitle').textContent = session ? t().editSession : t().newSession;
+  $('psyError').textContent = ''; $('psyDelete').hidden = !session;
+  $('psyDate').value = session ? session.date : ymd(new Date());
+  $('psyFocus').value = session?.focus || '';
+  const type = session?.session_type || 'individual';
+  $('psy-editor').ptype.value = type;
+  const indiv = type === 'individual' ? notes[0] : null;
+  $('psyStudent').innerHTML = studentOptions(indiv?.student_id || (session ? '' : state.psy.filter), t().chooseStudent);
+  $('psyNote').value = indiv?.note || '';
+  $('psyGroupSel').innerHTML = GROUPS.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+  $('psyGroupSel').value = session?.group_id || state.group;
+  renderParticipants(type === 'group' ? notes : null);
+  syncPsyType();
+  $('psy-list').hidden = true; $('psy-editor').hidden = false; state.dirty = false;
+}
+function syncPsyType() {
+  const g = $('psy-editor').ptype.value === 'group';
+  $('psyIndividual').hidden = g; $('psyGroup').hidden = !g;
+}
+function renderParticipants(existing) {
+  const prev = {};
+  if (existing) existing.forEach(n => { prev[n.student_id] = { on: true, note: n.note }; });
+  else $('psyParticipants').querySelectorAll('[data-st]').forEach(p => { prev[p.dataset.st] = { on: p.querySelector('input').checked, note: p.querySelector('textarea').value }; });
+  const list = state.psy.students.filter(s => s.group_id === $('psyGroupSel').value);
+  $('psyParticipants').innerHTML = list.length ? list.map(s => { const p = prev[s.id] || { on: false, note: '' }; return `
+    <div class="participant" data-st="${s.id}">
+      <label class="check" style="margin:0"><input type="checkbox"${p.on ? ' checked' : ''}><span>${esc(s.full_name)}</span></label>
+      <textarea aria-label="${esc(t().sessionNotes)} ${esc(s.full_name)}"${p.on ? '' : ' hidden'}>${esc(p.note)}</textarea>
+    </div>`; }).join('') : `<p class="empty">${esc(t().noStudents)}</p>`;
+}
+$('psy-editor').addEventListener('change', e => {
+  if (e.target.name === 'ptype') syncPsyType();
+  if (e.target.id === 'psyGroupSel') renderParticipants(null);
+  if (e.target.type === 'checkbox') { const ta = e.target.closest('.participant')?.querySelector('textarea'); if (ta) { ta.hidden = !e.target.checked; if (e.target.checked) ta.focus(); } }
+});
+$('psy-editor').addEventListener('input', () => { state.dirty = true; });
+$('psyCancel').addEventListener('click', () => { if (!confirmDiscard()) return; state.dirty = false; $('psy-editor').hidden = true; $('psy-list').hidden = false; });
+$('psy-editor').addEventListener('submit', async e => {
+  e.preventDefault(); $('psyError').textContent = '';
+  const type = $('psy-editor').ptype.value, date = $('psyDate').value;
+  if (!date) return;
+  let notes;
+  if (type === 'individual') {
+    if (!$('psyStudent').value) { $('psyError').textContent = t().pickStudent; return; }
+    notes = [{ student_id: $('psyStudent').value, note: $('psyNote').value.trim() }];
+  } else {
+    notes = [...$('psyParticipants').querySelectorAll('[data-st]')].filter(p => p.querySelector('input').checked)
+      .map(p => ({ student_id: p.dataset.st, note: p.querySelector('textarea').value.trim() }));
+    if (!notes.length) { $('psyError').textContent = t().pickOne; return; }
+  }
+  const row = { date, session_type: type, group_id: type === 'group' ? $('psyGroupSel').value : null, focus: $('psyFocus').value.trim() || null, updated_at: new Date().toISOString() };
+  const res = state.psy.editing
+    ? await sb.from('psych_sessions').update(row).eq('id', state.psy.editing.id).select('id').single()
+    : await sb.from('psych_sessions').insert(row).select('id').single();
+  if (res.error) { $('psyError').textContent = t().saveError; return; }
+  const id = res.data.id;
+  const r = await sb.from('psych_notes').upsert(notes.map(n => ({ ...n, session_id: id })), { onConflict: 'session_id,student_id' });
+  if (r.error) { $('psyError').textContent = t().saveError; return; }
+  const keep = new Set(notes.map(n => n.student_id));
+  const drop = state.psy.editingNotes.map(n => n.student_id).filter(s => !keep.has(s));
+  if (drop.length) await sb.from('psych_notes').delete().eq('session_id', id).in('student_id', drop);
+  state.dirty = false; toast(t().saved); $('psy-editor').hidden = true; $('psy-list').hidden = false; loadPsych();
+});
+$('psyDelete').addEventListener('click', async () => {
+  if (!state.psy.editing || !confirm(t().deleteConfirm)) return;
+  const { error } = await sb.from('psych_sessions').delete().eq('id', state.psy.editing.id);
+  if (error) { $('psyError').textContent = t().saveError; return; }
+  state.dirty = false; toast(t().deleted); $('psy-editor').hidden = true; $('psy-list').hidden = false; loadPsych();
+});
+
+/* ================= ADMIN / OVERVIEW ================= */
+$('admPrev').addEventListener('click', () => { state.adm.month = addMonths(state.adm.month, -1); loadAdmin(); });
+$('admNext').addEventListener('click', () => { state.adm.month = addMonths(state.adm.month, 1); loadAdmin(); });
+async function loadAdmin() {
+  const [first, last] = monthBounds(state.adm.month), today = ymd(new Date());
+  const [req, needs, att, eng, psy, cal] = await Promise.all([
+    sb.from('volunteer_requests').select('*, linked:calendar_entries!volunteer_requests_calendar_entry_id_fkey(id, title, date, group_id)').order('created_at', { ascending: false }).limit(60),
+    sb.from('calendar_entries').select('*').gte('date', today).or('needs_resources.eq.true,needs_volunteer.eq.true').order('date'),
+    sb.from('attendance').select('date, present, students!inner(group_id)').gte('date', first).lte('date', last),
+    sb.from('english_sessions').select('group_id').gte('date', first).lte('date', last),
+    sb.from('psych_sessions').select('id').gte('date', first).lte('date', last),
+    sb.from('calendar_entries').select('group_id, kind').gte('date', first).lte('date', last),
+  ]);
+  if (state.page !== 'adm') return;
+  if ([req, needs, att, eng, psy, cal].some(r => r.error)) { toast(t().loadError, true); return; }
+  state.adm.requests = req.data; state.adm.needs = needs.data;
+  renderRequests(); renderNeeds();
+  // stats
+  $('admMonthTitle').textContent = t().monthStats(fmtMonth(state.adm.month));
+  const rows = GROUPS.map(g => {
+    const a = att.data.filter(x => x.students.group_id === g.id);
+    const days = new Set(a.map(x => x.date)).size;
+    const rate = a.length ? Math.round(100 * a.filter(x => x.present).length / a.length) + '%' : '–';
+    const c = cal.data.filter(x => x.group_id === g.id || x.group_id === null);
+    return `<tr><td><span class="gdot ${g.id}"></span>${g.name}</td><td class="num">${days}</td><td class="num">${rate}</td>
+      <td class="num">${eng.data.filter(x => x.group_id === g.id).length}</td>
+      <td class="num">${c.filter(x => x.kind !== 'volunteer').length}</td><td class="num">${c.filter(x => x.kind === 'volunteer').length}</td></tr>`;
+  }).join('');
+  $('admStats').innerHTML = `<table class="t"><thead><tr><th>${esc(t().group)}</th><th class="num">${esc(t().daysRecorded)}</th><th class="num">${esc(t().attRate)}</th>
+    <th class="num">${esc(t().engSessions)}</th><th class="num">${esc(t().calItems)}</th><th class="num">${esc(t().volSessions)}</th></tr></thead>
+    <tbody>${rows}</tbody><tfoot><tr><td colspan="6">${esc(t().psyTotal(psy.data.length))}</td></tr></tfoot></table>`;
+}
+function reqHtml(r, actions) {
+  const l = r.linked;
+  return `<div class="req">
+    <div><span class="who">${esc(r.requester_name)}</span> <span class="status-pill ${r.status}">${esc(t()[r.status])}</span></div>
+    ${l ? `<div><span class="muted">${esc(t().forItem)}:</span> <span class="gdot ${l.group_id || 'all'}"></span>${esc(l.title)} · ${esc(fmtShort(l.date))}</div>` : ''}
+    ${r.preferred_date ? `<div><span class="muted">${esc(t().preferred)}:</span> ${esc(fmtLong(r.preferred_date))}</div>` : ''}
+    ${r.requester_contact ? `<div><span class="muted">${esc(t().contact)}:</span> ${esc(r.requester_contact)}</div>` : ''}
+    ${r.message ? `<div>${esc(r.message)}</div>` : ''}
+    <div class="muted" style="font-size:.85rem">${esc(t().received)}: ${esc(fmtShort(r.created_at.slice(0, 10)))}</div>
+    ${actions ? `<div class="actions"><button class="btn btn-primary btn-sm" data-schedule="${r.id}">${esc(t().schedule)}</button>
+      <button class="btn btn-sm" data-decline="${r.id}">${esc(t().decline)}</button></div>` : ''}
+  </div>`;
+}
+function renderRequests() {
+  const all = state.adm.requests || [], pending = all.filter(r => r.status === 'pending'), done = all.filter(r => r.status !== 'pending');
+  $('admRequests').innerHTML = (pending.length ? pending.map(r => reqHtml(r, true)).join('') : `<p class="empty">${esc(t().noRequests)}</p>`) +
+    (done.length ? `<details><summary>${esc(t().earlier)} (${done.length})</summary>${done.map(r => reqHtml(r, false)).join('')}</details>` : '');
+}
+$('admRequests').addEventListener('click', async e => {
+  const s = e.target.closest('[data-schedule]'), d = e.target.closest('[data-decline]');
+  if (s) {
+    const r = state.adm.requests.find(x => x.id === s.dataset.schedule), l = r.linked;
+    openEntry(null, r.preferred_date || l?.date || ymd(new Date()), {
+      kind: 'volunteer', title: t().volunteerTitle(r.requester_name), volunteer_name: r.requester_name,
+      notes: [l ? l.title : '', r.message || ''].filter(Boolean).join(' — '), group_id: l ? l.group_id : null,
+      date: r.preferred_date || l?.date,
+    }, r);
+  }
+  if (d) {
+    if (!confirm(t().declineConfirm)) return;
+    const { error } = await sb.from('volunteer_requests').update({ status: 'declined', handled_at: new Date().toISOString() }).eq('id', d.dataset.decline);
+    if (error) { toast(t().saveError, true); return; }
+    loadAdmin();
+  }
+});
+function renderNeeds() {
+  const list = state.adm.needs || [];
+  $('admNeeds').innerHTML = !list.length ? `<p class="empty">${esc(t().noNeeds)}</p>` :
+    `<table class="t"><thead><tr><th>${esc(t().date)}</th><th>${esc(t().item)}</th><th>${esc(t().needs)}</th></tr></thead><tbody>${list.map(e => `
+      <tr><td style="white-space:nowrap">${esc(fmtShort(e.date))}</td>
+        <td><button class="sess-btn" data-need="${e.id}"><span class="gdot ${e.group_id || 'all'}"></span>${esc(e.title)}</button>
+          <div class="muted" style="font-size:.85rem">${esc(e.group_id ? gName(e.group_id) : t().allGroups)} · ${esc(kindLabel(e.kind))}</div></td>
+        <td>${[e.needs_resources && t().resources, e.needs_volunteer && t().aVolunteer].filter(Boolean).map(esc).join(', ')}
+          ${e.needs_note ? `<div class="muted" style="font-size:.88rem">${esc(e.needs_note)}</div>` : ''}</td></tr>`).join('')}</tbody></table>`;
+}
+$('admNeeds').addEventListener('click', e => {
+  const b = e.target.closest('[data-need]'); if (b) openEntry(state.adm.needs.find(x => x.id === b.dataset.need));
+});
+
+/* ---------- boot ---------- */
+applyLang();
+sb.auth.getSession().then(({ data }) => { if (data.session) enter(data.session.user); });
+</script>
+</body>
+</html>
